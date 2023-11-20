@@ -1,0 +1,231 @@
+package todo
+
+import (
+	"fmt"
+	"github.com/google/uuid"
+)
+
+templ page(l *list) {
+	<div class="w-[32rem] mx-auto">
+		<h2 class="font-bold text-3xl">Todo List</h2>
+		@l.Component()
+	</div>
+}
+
+templ (l list) Component() {
+	<div>
+		<ul class="items mt-8 border-t border-gray-400">
+			for _, item := range l.Items {
+				<li>
+					@item.Component()
+				</li>
+			}
+		</ul>
+		<form
+ 			hx-post="/items"
+ 			hx-target=".items"
+ 			hx-swap="beforeend"
+ 			hx-on::after-request="this.reset()"
+ 			autocomplete="off"
+ 			class="
+                mt-5
+                px-4 py-4
+                border
+                border-gray-600
+                rounded-xl
+            "
+		>
+			<div class="flex justify-between items-end">
+				<div class="flex flex-col gap-2">
+					<input
+ 						type="text"
+ 						name="task-name"
+ 						value=""
+ 						placeholder="Name"
+ 						class="w-auto"
+					/>
+					<input
+ 						type="text"
+ 						name="task-description"
+ 						value=""
+ 						placeholder="Description"
+ 						class="w-auto text-sm text-gray-600"
+					/>
+				</div>
+				<button
+ 					type="submit"
+ 					class="
+                    rounded-xl
+                    bg-red-600
+                    h-10
+                    px-2
+                    text-white
+                "
+				>Submit</button>
+			</div>
+		</form>
+	</div>
+}
+
+func (i item) className() string {
+	return fmt.Sprintf("item-%v", i.ID.String())
+}
+
+templ (i item) Component() {
+	<div
+ 		class={ i.className(),
+        `
+                group
+                border-b
+                border-gray-400
+                flex
+                flex-col
+                justify-items-start
+                gap-3
+        ` }
+ 		x-data="{ showEdit: false }"
+	>
+		<div
+ 			class="
+				flex flex-row items-start justify-items-start gap-3
+                pt-3
+                px-2
+                "
+ 			x-bind:class="showEdit || 'mb-5'"
+		>
+			<div>
+				@i.IsDone.Component(i.ID)
+			</div>
+			<div class="grow">
+				<h3 class="">
+					{ i.Title }
+				</h3>
+				<div class="text-sm text-gray-600">
+					{ i.Description }
+				</div>
+			</div>
+			<div
+ 				class="hidden group-hover:block"
+			>
+				<button
+ 					@click="showEdit = ! showEdit"
+ 					class="
+                    rounded-xl
+                    text-white
+                    bg-gray-500
+                    mt-1 w-6 h-6
+                    ml-auto
+                    text-center
+                    "
+				>
+					+
+				</button>
+				<button
+ 					hx-delete={ fmt.Sprintf("/items/%v", i.ID.String()) }
+ 					hx-trigger="click"
+ 					hx-swap="outerHTML"
+ 					hx-target={ fmt.Sprintf(".%v", i.className()) }
+ 					class="
+                rounded-xl
+                text-white
+                bg-orange-500
+                mt-1 w-6 h-6
+                ml-auto
+                text-center
+                "
+				>
+					X
+				</button>
+			</div>
+		</div>
+		@i.edit("showEdit")
+	</div>
+}
+
+templ (i item) edit(xShow string) {
+	<div
+ 		x-show={ xShow }
+ 		class="
+				flex flex-row items-center justify-items-start gap-3
+                pb-4
+                "
+	>
+		<form
+ 			hx-put={ fmt.Sprintf("/items/%v", i.ID.String()) }
+ 			hx-target={ fmt.Sprintf(".%v", i.className()) }
+ 			hx-swap="outerHTML"
+ 			hx-on::after-request="this.reset()"
+ 			autocomplete="off"
+ 			class="
+            px-4 py-4
+            border
+            border-gray-600
+            rounded-xl
+        "
+		>
+			<div class="flex justify-between items-end">
+				<div class="flex flex-col gap-2">
+					<input
+ 						type="text"
+ 						name="task-name"
+ 						value={ i.Title }
+ 						placeholder="Name"
+					/>
+					<input
+ 						type="text"
+ 						name="task-description"
+ 						value={ i.Description }
+ 						placeholder="Description"
+ 						class="text-sm text-gray-600"
+					/>
+				</div>
+				<button
+ 					type="submit"
+ 					class="
+                rounded-xl
+                bg-red-600
+                h-10
+                px-2
+                text-white
+            "
+				>Update</button>
+			</div>
+		</form>
+	</div>
+}
+
+templ (id isDone) Component(ID uuid.UUID) {
+	<button
+ 		hx-put={ fmt.Sprintf("/items/%v/toggle", ID.String()) }
+ 		hx-trigger="click"
+ 		hx-swap="outerHTML"
+ 		class="select-none cursor-pointer"
+	>
+		if id {
+			<div
+ 				class="
+                rounded-full
+                text-white
+                bg-green-500
+                mt-1 w-6 h-6
+                text-center
+                "
+			>
+				✓
+			</div>
+		} else {
+			<div
+ 				class="
+                rounded-full
+                border-2
+                text-gray-500
+                border-gray-500
+                mt-1 w-6 h-6
+                text-center
+                "
+			>
+				&nbsp
+			</div>
+		}
+	</button>
+}

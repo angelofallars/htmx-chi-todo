@@ -1,0 +1,156 @@
+package site
+
+import (
+	"net/http"
+	"github.com/angelofallars/htmx-chi-todo/htmx"
+	"github.com/angelofallars/htmx-chi-todo/auth"
+	"encoding/json"
+)
+
+// Render a root template if new page.
+//
+// On boosted requests, just return a partial with the passed-in body and set a trigger
+// to change the title on the front-end side.
+func RenderRootOrPartial(w http.ResponseWriter, r *http.Request, title string, body templ.Component) error {
+	ctx := r.Context()
+	claims, err := auth.JwtClaimsFromRequest(r)
+	if err != nil {
+		claims = nil
+	}
+
+	isBoosted := r.Header.Get(htmx.HeaderBoosted) == "true"
+	if isBoosted {
+		w.Header().Add(htmx.HeaderRetarget, "main")
+		w.Header().Add(htmx.HeaderReswap, "innerHTML")
+
+		trigger := map[string]string{
+			"changeTitle": title,
+		}
+		triggerBytes, _ := json.Marshal(trigger)
+
+		w.Header().Add(htmx.HeaderTrigger, string(triggerBytes))
+		return body.Render(ctx, w)
+	}
+
+	return root(r, claims, title, body).Render(ctx, w)
+}
+
+templ root(r *http.Request, claims *auth.JwtClaims, title string, body templ.Component) {
+	<!DOCTYPE html>
+	<html lang="en">
+		<head>
+			@headElems(title)
+		</head>
+		<body hx-boost="true">
+			@nav(claims)
+			@mainContainer(body)
+			@errors()
+		</body>
+	</html>
+}
+
+templ headElems(title string) {
+	<title>{ title }</title>
+	<meta charset="UTF-8"/>
+	<meta name="viewport" content="width=device-width, initial-scale=1"/>
+	<script src="https://unpkg.com/htmx.org@1.9.8" integrity="sha384-rgjA7mptc2ETQqXoYC3/zJvkU7K/aP44Y+z7xQuJiVnB/422P/Ak+F/AqFR7E4Wr" crossorigin="anonymous"></script>
+	<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/gh/gnat/surreal/surreal.js"></script>
+	@scriptErrorInit()
+	<script>
+        htmx.on("changeTitle", function(evt) {
+            me("title").innerText = evt.detail.value;
+        });
+    </script>
+	<link rel="stylesheet" href="/assets/styles.out.css"/>
+}
+
+templ mainContainer(body templ.Component) {
+	<main
+ 		class="text-lg w-9/12 mx-auto mt-4"
+	>
+		@body
+	</main>
+}
+
+templ nav(claims *auth.JwtClaims) {
+	<nav class="text-lg bg-slate-800 text-bold text-white flex justify-between px-3 py-1.5">
+		<ul class="flex gap-2">
+			<li
+ 				class="
+                        bg-slate-700
+                        hover:bg-slate-600
+                        rounded-md
+                        duration-75
+                        px-2
+                        py-1
+                    "
+			>
+				<a href="/">
+					Home
+				</a>
+			</li>
+			<li
+ 				class="
+                        bg-slate-700
+                        hover:bg-slate-600
+                        rounded-md
+                        duration-75
+                        px-2
+                        py-1
+                    "
+			>
+				<a href="/lists">
+					My Todo Lists
+				</a>
+			</li>
+		</ul>
+		<ul class="flex gap-2">
+			if claims != nil {
+				<li
+ 					class="
+                        bg-slate-700
+                        hover:bg-slate-600
+                        rounded-md
+                        duration-75
+                        px-2
+                        py-1
+                    "
+				>
+					<a>
+						{ claims.Username }
+					</a>
+				</li>
+			} else {
+				<li
+ 					class="
+                        bg-slate-700
+                        hover:bg-slate-600
+                        rounded-md
+                        duration-75
+                        px-2
+                        py-1
+                    "
+				>
+					<a href="/login">
+						Log In
+					</a>
+				</li>
+				<li
+ 					class="
+                        bg-sky-700
+                        hover:bg-sky-600
+                        rounded-md
+                        duration-75
+                        px-2
+                        py-1
+                    "
+				>
+					<a href="/signup">
+						Sign Up
+					</a>
+				</li>
+			}
+		</ul>
+	</nav>
+}

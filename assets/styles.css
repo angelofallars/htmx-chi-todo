@@ -1,0 +1,36 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.err-fadein {
+    animation: fadein 0.45s;
+}
+
+@keyframes fadein {
+    0% {
+        transform: translateX(-50px);
+        opacity: 0;
+    }
+
+    100% {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.err-fadeout {
+    animation: fadeout 0.45s;
+    animation-fill-mode: forwards;
+}
+
+@keyframes fadeout {
+    0% {
+        transform: translateX(0);
+        opacity: 1;
+    }
+
+    100% {
+        transform: translateX(-50px);
+        opacity: 0;
+    }
+}

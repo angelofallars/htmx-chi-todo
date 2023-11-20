@@ -1,0 +1,16 @@
+# Output .templ files
+*_templ.go
+*.out.css
+
+# Binaries
+/bin/
+__debug*
+
+# Temporary
+tmp/
+
+# EWW
+node_modules/
+
+# Redis dump
+*.rdb

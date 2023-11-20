@@ -1,0 +1,89 @@
+package site
+
+import (
+	"net/http"
+)
+
+// Render an error message to return to the user.
+func RenderError(w http.ResponseWriter, code int, err error) {
+	w.WriteHeader(code)
+	w.Write([]byte(err.Error()))
+}
+
+templ errors() {
+	<div id="e" x-data class="absolute bottom-4 right-4 flex flex-col-reverse gap-2">
+		<template x-for="error in $store.errors.messages" :key="error.id">
+			<div
+ 				class={ `
+                        w-72
+                        px-4 py-4
+                        bg-red-200
+                        border-2
+                        border-red-700
+                        text-red-700
+                        rounded-xl
+                        flex
+                        justify-between
+                        err-fadein
+                            ` }
+ 				x-init="$store.errors.removeAfterDelay(error.id, 10000)"
+ 				:class="`err-${error.id}`"
+			>
+				<div x-html="error.text"></div>
+				<button
+ 					class="font-bold"
+ 					@click="$store.errors.remove(error.id)"
+				>
+					X
+				</button>
+			</div>
+		</template>
+	</div>
+}
+
+script scriptErrorInit() {
+    function sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    document.addEventListener('alpine:init', () => {
+        Alpine.store('errors', {
+            messages: [
+            ],
+
+            add(message) {
+                const id = this.messages.length;
+                this.messages.push({ id: id, text: message });
+            },
+
+            remove(id) {
+                // Suppress warnings about accessing a deleted element
+                const errRemoved = this.messages.filter(message => message.id === id).length === 0;
+                if (errRemoved) {
+                    return;
+                }
+
+                const errElem = me(`.err-${id}`);
+                errElem.classAdd("err-fadeout");
+
+                errElem.on("animationend", (evt) => {
+                    const filtered = this.messages.filter(message => message.id !== id);
+                    if (filtered === undefined) {
+                        return;
+                    }
+                    this.messages = filtered;
+                });
+            },
+
+            removeAfterDelay(id, delay) {
+                setTimeout(() => {
+                    this.remove(id);
+                }, delay);
+            }
+        });
+
+        htmx.on("htmx:responseError", function(evt) {
+            Alpine.store('errors').add(evt.detail.xhr.responseText);
+        });
+    })
+}
