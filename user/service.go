@@ -6,14 +6,15 @@ import (
 	"time"
 
 	"github.com/angelofallars/htmx-chi-todo/auth"
+	"github.com/angelofallars/htmx-chi-todo/service"
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type (
 	Service interface {
-		Signup(ctx context.Context, u *user) error
-		Login(ctx context.Context, username username, rawPassword string) (string, error)
+		Signup(ctx context.Context, req SignupReq) error
+		Login(ctx context.Context, req LoginReq) (string, error)
 	}
 
 	userService struct {
@@ -27,26 +28,59 @@ func NewService(repo Repository) Service {
 	}
 }
 
-func (svc userService) Signup(ctx context.Context, u *user) error {
-	user, err := svc.repo.GetUserByUsername(ctx, u.Username)
-	if user != nil {
+// These are the DTOs (data transfer objects)
+type (
+	SignupReq struct {
+		Username    string
+		RawPassword string
+		Email       string
+	}
+)
+
+type (
+	LoginReq struct {
+		Username    string
+		RawPassword string
+	}
+)
+
+func (svc userService) Signup(ctx context.Context, req SignupReq) error {
+	u, err := svc.repo.GetUserByUsername(ctx, req.Username)
+	if u != nil {
 		return errors.New("Username already exists")
 	}
 
-	err = svc.repo.CreateUser(ctx, u)
+	username, err := newUsername(req.Username)
+	if err != nil {
+		return errors.Join(service.ErrValidation, err)
+	}
+
+	password, err := newHashedPassword(req.RawPassword)
+	if err != nil {
+		return errors.Join(service.ErrValidation, err)
+	}
+
+	email, err := newEmail(req.Email)
+	if err != nil {
+		return errors.Join(service.ErrValidation, err)
+	}
+
+	user := newUser(username, password, email)
+	err = svc.repo.CreateUser(ctx, user)
+
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (svc userService) Login(ctx context.Context, username username, rawPassword string) (string, error) {
-	u, err := svc.repo.GetUserByUsername(ctx, username)
+func (svc userService) Login(ctx context.Context, req LoginReq) (string, error) {
+	u, err := svc.repo.GetUserByUsername(ctx, req.Username)
 	if err != nil {
 		return "", errors.New("Incorrect email or password.")
 	}
 
-	err = bcrypt.CompareHashAndPassword([]byte(u.HashedPassword), []byte(rawPassword))
+	err = bcrypt.CompareHashAndPassword([]byte(u.HashedPassword), []byte(req.RawPassword))
 	if err != nil {
 		return "", errors.New("Incorrect email or password.")
 	}

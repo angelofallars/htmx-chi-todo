@@ -1,9 +1,11 @@
 package user
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/angelofallars/htmx-chi-todo/htmx"
+	"github.com/angelofallars/htmx-chi-todo/service"
 	svc "github.com/angelofallars/htmx-chi-todo/service"
 	"github.com/angelofallars/htmx-chi-todo/site"
 	"github.com/go-chi/chi/v5"
@@ -43,53 +45,6 @@ func (h handler) SignupPage(w http.ResponseWriter, r *http.Request) {
 	)
 }
 
-func (h handler) Signup(w http.ResponseWriter, r *http.Request) {
-	r.ParseForm()
-	un := r.Form.Get("username")
-	ea := r.Form.Get("email")
-	pw := r.Form.Get("password")
-
-	username, err := newUsername(un)
-	if err != nil {
-		site.RenderError(w,
-			http.StatusBadRequest,
-			err,
-		)
-		return
-	}
-
-	password, err := newHashedPassword(pw)
-	if err != nil {
-		site.RenderError(w,
-			http.StatusBadRequest,
-			err,
-		)
-		return
-	}
-
-	email, err := newEmail(ea)
-	if err != nil {
-		site.RenderError(w,
-			http.StatusBadRequest,
-			err,
-		)
-		return
-	}
-
-	user := newUser(username, password, email)
-
-	err = h.service.Signup(r.Context(), user)
-	if err != nil {
-		site.RenderError(w,
-			http.StatusInternalServerError,
-			err,
-		)
-		return
-	}
-
-	w.Header().Add(htmx.HeaderRedirect, "/login")
-}
-
 func (h handler) LoginPage(w http.ResponseWriter, r *http.Request) {
 	site.RenderRootOrPartial(w, r,
 		"Login",
@@ -97,33 +52,59 @@ func (h handler) LoginPage(w http.ResponseWriter, r *http.Request) {
 	)
 }
 
-func (h handler) Login(w http.ResponseWriter, r *http.Request) {
+func (h handler) Signup(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
-	un := r.Form.Get("username")
-	pw := r.Form.Get("password")
+	username := r.Form.Get("username")
+	email := r.Form.Get("email")
+	password := r.Form.Get("password")
 
-	username, err := newUsername(un)
-	if err != nil {
-		site.RenderError(w,
-			http.StatusBadRequest,
-			err,
-		)
-		return
-	}
+	err := h.service.Signup(r.Context(), SignupReq{
+		Username:    username,
+		Email:       email,
+		RawPassword: password,
+	})
 
-	jwt, err := h.service.Login(r.Context(), username, pw)
 	if err != nil {
+		code := http.StatusInternalServerError
+		if errors.Is(err, service.ErrValidation) {
+			code = http.StatusBadRequest
+		}
 		site.RenderError(w,
-			http.StatusInternalServerError,
+			code,
 			err,
 		)
 		return
 	}
 
 	w.Header().Add(htmx.HeaderRedirect, "/login")
+}
+
+func (h handler) Login(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	username := r.Form.Get("username")
+	password := r.Form.Get("password")
+
+	jwt, err := h.service.Login(r.Context(), LoginReq{
+		Username:    username,
+		RawPassword: password,
+	})
+
+	if err != nil {
+		code := http.StatusInternalServerError
+		if errors.Is(err, service.ErrValidation) {
+			code = http.StatusBadRequest
+		}
+		site.RenderError(w,
+			code,
+			err,
+		)
+		return
+	}
+
+	w.Header().Add(htmx.HeaderRedirect, "/")
 	http.SetCookie(w, &http.Cookie{
 		Name:  "jwt",
 		Value: jwt,
 	})
-	w.Write([]byte(jwt))
+	w.WriteHeader(http.StatusOK)
 }
