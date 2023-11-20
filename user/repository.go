@@ -12,7 +12,7 @@ type (
 	Repository interface {
 		CreateUser(ctx context.Context, u *user) error
 		GetUserByUsername(ctx context.Context, username username) (*user, error)
-		GetUserByEmail(ctx context.Context, username username) (*user, error)
+		GetUserByEmail(ctx context.Context, email email) (*user, error)
 		GetUserByID(ctx context.Context, uuid uuid.UUID) (*user, error)
 	}
 
@@ -61,8 +61,8 @@ func (repo redisRepository) CreateUser(ctx context.Context, u *user) (err error)
 	return
 }
 
-func (repo redisRepository) GetUserByEmail(ctx context.Context, username username) (*user, error) {
-	cmd := repo.redis.HGet(ctx, redisEmailIndex, string(username))
+func (repo redisRepository) GetUserByEmail(ctx context.Context, email email) (*user, error) {
+	cmd := repo.redis.HGet(ctx, redisEmailIndex, string(email))
 	if cmd.Err() != nil {
 		return nil, cmd.Err()
 	}
