@@ -4,10 +4,10 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/angelofallars/htmx-chi-todo/htmx"
 	"github.com/angelofallars/htmx-chi-todo/service"
 	svc "github.com/angelofallars/htmx-chi-todo/service"
 	"github.com/angelofallars/htmx-chi-todo/site"
+	"github.com/angelofallars/htmx-go"
 	"github.com/go-chi/chi/v5"
 )
 

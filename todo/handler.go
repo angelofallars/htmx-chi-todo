@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/angelofallars/htmx-chi-todo/htmx"
 	svc "github.com/angelofallars/htmx-chi-todo/service"
 	"github.com/angelofallars/htmx-chi-todo/site"
+	"github.com/angelofallars/htmx-go"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 )
