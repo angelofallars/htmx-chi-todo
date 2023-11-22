@@ -76,7 +76,9 @@ func (h handler) Signup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Add(htmx.HeaderRedirect, "/login")
+	htmx.NewResponse().
+		Redirect("login").
+		Write(w)
 }
 
 func (h handler) Login(w http.ResponseWriter, r *http.Request) {
@@ -101,10 +103,12 @@ func (h handler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Add(htmx.HeaderRedirect, "/")
+	htmx.NewResponse().
+		Redirect("/").
+		Write(w)
+
 	http.SetCookie(w, &http.Cookie{
 		Name:  "jwt",
 		Value: jwt,
 	})
-	w.WriteHeader(http.StatusOK)
 }

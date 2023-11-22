@@ -7,10 +7,11 @@ import (
 
 // Render an error message to return to the user.
 func RenderError(w http.ResponseWriter, code int, err error) {
-	w.Header().Add(htmx.HeaderReswap, "beforeend")
-	w.Header().Add(htmx.HeaderRetarget, "#errors")
-	w.WriteHeader(code)
-	errorMessage(err).Render(context.Background(), w)
+	htmx.NewResponse().
+		Reswap(htmx.SwapBeforeEnd).
+		Retarget("#errors").
+		StatusCode(code).
+		RenderTempl(context.Background(), w, errorMessage(err))
 }
 
 templ errorMessage(err error) {
