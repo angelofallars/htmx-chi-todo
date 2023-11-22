@@ -18,10 +18,11 @@ func RenderRootOrPartial(w http.ResponseWriter, r *http.Request, title string, b
 		claims = nil
 	}
 
-	isBoosted := r.Header.Get(htmx.HeaderBoosted) == "true"
-	if isBoosted {
-		w.Header().Add(htmx.HeaderRetarget, "main")
-		w.Header().Add(htmx.HeaderReswap, "innerHTML")
+	if htmx.IsBoosted(r) {
+		htmx.NewResponse().
+			Retarget("main").
+			Reswap(htmx.SwapInnerHTML).
+			Write(w)
 
 		trigger := map[string]string{
 			"changeTitle": title,

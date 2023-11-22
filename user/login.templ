@@ -4,10 +4,10 @@ templ loginPage() {
 	<form
  		hx-post="/login"
  		hx-swap="none"
- 		class="flex flex-col gap-5 w-96 mx-auto"
+ 		class={ "flex", "flex-col", "gap-5", "w-96", "mx-auto" }
 	>
-		<h3 class="text-3xl font-bold">Log in</h3>
-		<div class="flex flex-col">
+		<h3 class={ "text-3xl", "font-bold" }>Log in</h3>
+		<div class={ "flex", "flex-col" }>
 			<label for="username" class="text-base">Username</label>
 			<input
  				name="username"
@@ -17,16 +17,16 @@ templ loginPage() {
  				autocomplete="off"
  				min="4"
  				max="8"
- 				class="
-                   rounded-xl
-                   border
-                   border-gray-400
-                   py-2
-                   px-3
-                   "
+ 				class={
+					"rounded-xl",
+					"border",
+					"border-gray-400",
+					"py-2",
+					"px-3",
+				}
 			/>
 		</div>
-		<div class="flex flex-col">
+		<div class={ "flex", "flex-col" }>
 			<label for="password" class="text-base">Password</label>
 			<input
  				name="password"
@@ -35,27 +35,27 @@ templ loginPage() {
  				placeholder="Enter your password"
  				required
  				min="8"
- 				class="
-                   rounded-xl
-                   border
-                   border-gray-400
-                   py-2
-                   px-3
-                   "
+ 				class={
+					"rounded-xl",
+					"border",
+					"border-gray-400",
+					"py-2",
+					"px-3",
+				}
 			/>
 		</div>
 		<button
  			type="submit"
- 			class="
-                rounded-xl
-                bg-sky-600
-                hover:bg-sky-400
-                duration-200
-                py-2
-                px-2
-                text-white
-                text-center
-            "
+ 			class={
+				"rounded-xl",
+				"bg-sky-600",
+				"hover:bg-sky-400",
+				"duration-200",
+				"py-2",
+				"px-2",
+				"text-white",
+				"text-center",
+			}
 		>Log In</button>
 	</form>
 }

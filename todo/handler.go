@@ -10,7 +10,6 @@ import (
 	"github.com/angelofallars/htmx-chi-todo/site"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
-	"github.com/unrolled/render"
 )
 
 type (
@@ -24,7 +23,6 @@ type (
 		DeleteItem(w http.ResponseWriter, r *http.Request)
 	}
 	handler struct {
-		rnd     *render.Render
 		service Service
 	}
 )
@@ -39,9 +37,8 @@ func (h handler) Mount(r chi.Router) {
 	r.Delete("/items/{id}", h.DeleteItem)
 }
 
-func NewHandler(rnd *render.Render, service Service) Handler {
+func NewHandler(service Service) Handler {
 	return &handler{
-		rnd:     rnd,
 		service: service,
 	}
 }

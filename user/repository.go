@@ -2,6 +2,7 @@ package user
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/google/uuid"
@@ -10,10 +11,11 @@ import (
 
 type (
 	Repository interface {
-		CreateUser(ctx context.Context, u *user) error
-		GetUserByUsername(ctx context.Context, username username) (*user, error)
-		GetUserByEmail(ctx context.Context, email email) (*user, error)
-		GetUserByID(ctx context.Context, uuid uuid.UUID) (*user, error)
+		Migrate() error
+		CreateUser(ctx context.Context, u *User) error
+		GetUserByUsername(ctx context.Context, username Username) (*User, error)
+		GetUserByEmail(ctx context.Context, email Email) (*User, error)
+		GetUserByID(ctx context.Context, uuid uuid.UUID) (*User, error)
 	}
 
 	redisRepository struct {
@@ -27,13 +29,24 @@ const (
 	redisEmailIndex    = "usersByEmail"
 )
 
+var (
+	ErrDuplicate    = errors.New("record already exists")
+	ErrNotExists    = errors.New("record does not exist")
+	ErrUpdateFailed = errors.New("update failed")
+	ErrDeleteFailed = errors.New("delete failed")
+)
+
 func NewRedisRepository(redis *redis.Client) Repository {
 	return &redisRepository{
 		redis: redis,
 	}
 }
 
-func (repo redisRepository) CreateUser(ctx context.Context, u *user) (err error) {
+func (repo redisRepository) Migrate() error {
+	return nil
+}
+
+func (repo redisRepository) CreateUser(ctx context.Context, u *User) (err error) {
 	id := u.ID.String()
 
 	m := map[string]any{
@@ -61,7 +74,7 @@ func (repo redisRepository) CreateUser(ctx context.Context, u *user) (err error)
 	return
 }
 
-func (repo redisRepository) GetUserByEmail(ctx context.Context, email email) (*user, error) {
+func (repo redisRepository) GetUserByEmail(ctx context.Context, email Email) (*User, error) {
 	cmd := repo.redis.HGet(ctx, redisEmailIndex, string(email))
 	if cmd.Err() != nil {
 		return nil, cmd.Err()
@@ -74,13 +87,13 @@ func (repo redisRepository) GetUserByEmail(ctx context.Context, email email) (*u
 	return repo.GetUserByID(ctx, id)
 }
 
-func (repo redisRepository) GetUserByID(ctx context.Context, uuid uuid.UUID) (*user, error) {
+func (repo redisRepository) GetUserByID(ctx context.Context, uuid uuid.UUID) (*User, error) {
 	cmd := repo.redis.HGetAll(ctx, fmt.Sprintf(redisFmtUser, uuid.String()))
 	if cmd.Err() != nil {
 		return nil, cmd.Err()
 	}
 
-	u := new(user)
+	u := new(User)
 
 	err := cmd.Scan(u)
 	if err != nil {
@@ -90,7 +103,7 @@ func (repo redisRepository) GetUserByID(ctx context.Context, uuid uuid.UUID) (*u
 	return u, nil
 }
 
-func (repo redisRepository) GetUserByUsername(ctx context.Context, username username) (*user, error) {
+func (repo redisRepository) GetUserByUsername(ctx context.Context, username Username) (*User, error) {
 	cmd := repo.redis.HGet(ctx, redisUsernameIndex, string(username))
 	if cmd.Err() != nil {
 		return nil, cmd.Err()

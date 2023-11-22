@@ -10,16 +10,16 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type user struct {
+type User struct {
 	ID             uuid.UUID      `redis:"id"`
 	CreatedAt      time.Time      `redis:"createdAt"`
-	Username       username       `redis:"username"`
-	Email          email          `redis:"email"`
-	HashedPassword hashedPassword `redis:"hashedPassword"`
+	Username       Username       `redis:"username"`
+	Email          Email          `redis:"email"`
+	HashedPassword HashedPassword `redis:"hashedPassword"`
 }
 
-func newUser(username username, hashedPassword hashedPassword, email email) *user {
-	return &user{
+func NewUser(username Username, hashedPassword HashedPassword, email Email) *User {
+	return &User{
 		ID:             uuid.New(),
 		CreatedAt:      time.Now(),
 		Username:       username,
@@ -28,9 +28,9 @@ func newUser(username username, hashedPassword hashedPassword, email email) *use
 	}
 }
 
-type username = string
+type Username = string
 
-func newUsername(un string) (username, error) {
+func NewUsername(un string) (Username, error) {
 	errs := make([]error, 0, 3)
 
 	if len(un) < 4 {
@@ -53,25 +53,25 @@ func newUsername(un string) (username, error) {
 	}
 
 	if len(errs) != 0 {
-		return username(""), errors.Join(errs...)
+		return Username(""), errors.Join(errs...)
 	}
 
-	return username(un), nil
+	return Username(un), nil
 }
 
-type email = string
+type Email = string
 
-func newEmail(e string) (email, error) {
+func NewEmail(e string) (Email, error) {
 	if err := validator.New().Var(e, "email"); err != nil {
-		return email(""), err
+		return Email(""), err
 	}
 
-	return email(e), nil
+	return Email(e), nil
 }
 
-type hashedPassword = string
+type HashedPassword = string
 
-func newHashedPassword(rawPassword string) (hashedPassword, error) {
+func NewHashedPassword(rawPassword string) (HashedPassword, error) {
 	errs := make([]error, 0, 1)
 
 	if len(rawPassword) < 8 {
@@ -84,8 +84,8 @@ func newHashedPassword(rawPassword string) (hashedPassword, error) {
 	}
 
 	if len(errs) != 0 {
-		return hashedPassword(""), errors.Join(errs...)
+		return HashedPassword(""), errors.Join(errs...)
 	}
 
-	return hashedPassword(string(hp)), nil
+	return HashedPassword(string(hp)), nil
 }

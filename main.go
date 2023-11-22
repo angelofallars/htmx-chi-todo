@@ -1,6 +1,8 @@
 package main
 
 import (
+	"database/sql"
+	"log"
 	"net/http"
 
 	"github.com/angelofallars/htmx-chi-todo/todo"
@@ -8,9 +10,11 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/jwtauth/v5"
+	_ "github.com/mattn/go-sqlite3"
 	"github.com/redis/go-redis/v9"
-	"github.com/unrolled/render"
 )
+
+const sqliteFileName = "sqlite.db"
 
 func main() {
 	redisClient := redis.NewClient(&redis.Options{
@@ -18,7 +22,12 @@ func main() {
 		DB:   0,
 	})
 
-	rnd := render.New()
+	sqliteDB, err := sql.Open("sqlite3", sqliteFileName)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	userSQLite3Repo := user.NewSQLiteRepository(sqliteDB)
 
 	r := chi.NewRouter()
 
@@ -27,7 +36,7 @@ func main() {
 
 	user.NewHandler(
 		user.NewService(
-			user.NewRedisRepository(redisClient),
+			userSQLite3Repo,
 		),
 	).Mount(r)
 
@@ -38,7 +47,6 @@ func main() {
 		r.Use(jwtauth.Authenticator)
 
 		todo.NewHandler(
-			rnd,
 			todo.NewService(
 				todo.NewRedisRepository(redisClient),
 			),
@@ -47,5 +55,5 @@ func main() {
 
 	r.Handle("/assets/*", http.StripPrefix("/assets/", http.FileServer(http.Dir("assets"))))
 
-	http.ListenAndServe(":3000", r)
+	log.Fatal(http.ListenAndServe(":3000", r))
 }

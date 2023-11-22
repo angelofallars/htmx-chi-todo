@@ -50,22 +50,22 @@ func (svc userService) Signup(ctx context.Context, req SignupReq) error {
 		return errors.New("Username already exists")
 	}
 
-	username, err := newUsername(req.Username)
+	username, err := NewUsername(req.Username)
 	if err != nil {
 		return errors.Join(service.ErrValidation, err)
 	}
 
-	password, err := newHashedPassword(req.RawPassword)
+	password, err := NewHashedPassword(req.RawPassword)
 	if err != nil {
 		return errors.Join(service.ErrValidation, err)
 	}
 
-	email, err := newEmail(req.Email)
+	email, err := NewEmail(req.Email)
 	if err != nil {
 		return errors.Join(service.ErrValidation, err)
 	}
 
-	user := newUser(username, password, email)
+	user := NewUser(username, password, email)
 	err = svc.repo.CreateUser(ctx, user)
 
 	if err != nil {
